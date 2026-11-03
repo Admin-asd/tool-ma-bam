@@ -1,0 +1,248 @@
+<!doctype html>
+<!-- Vị trí file: wp-content/gb-tools/encoding-security/tao-hash-md5-sha.html -->
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bộ tạo băm MD5 và SHA - Hash Generator online</title>
+<meta name="description" content="Tạo mã băm MD5, SHA-1, SHA-256, SHA-512 cục bộ trong trình duyệt của bạn[cite: 5]. Hỗ trợ tính toán mã băm nhanh chóng và bảo mật.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11"></script>
+<!-- Thư viện CryptoJS hỗ trợ mã hóa hash -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<style type="text/tailwindcss">
+  @theme {
+    --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif;
+    --color-primary: #fdca1e; --color-primary-hover: #e8b008; --color-primary-soft: #fffbeb;
+    --color-primary-ink: #9c6406; --color-ink: #0f172a; --color-neutral: #e5e7eb;
+  }
+</style>
+</head>
+<body class="bg-white font-sans text-ink antialiased">
+<main class="mx-auto max-w-5xl p-4 sm:p-6">
+  <div class="space-y-6">
+    <!-- Tiêu đề trang giống mẫu -->
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-ink">Công cụ tạo băm</h1>
+      <p class="text-sm text-slate-500 mt-1">Tạo mã băm MD5 và SHA cục bộ trong trình duyệt của bạn.</p>
+    </div>
+
+    <!-- Khung giao diện chính mô phỏng theo ảnh mẫu -->
+    <div class="border border-neutral rounded-2xl bg-white shadow-xs overflow-hidden">
+      
+      <!-- Thanh điều khiển phía trên của card -->
+      <div class="bg-slate-50 border-b border-neutral p-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-bold text-sm text-ink">Bộ tạo băm</span>
+          
+          <!-- Chọn thuật toán -->
+          <div class="flex items-center gap-1.5 text-sm">
+            <span class="text-xs text-slate-500 font-semibold">Thuật toán</span>
+            <select id="algSelect" onchange="generateHash()" class="rounded-xl border border-neutral p-2 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/60 bg-white font-semibold text-ink">
+              <option value="MD5">MD5</option>
+              <option value="SHA1">SHA-1</option>
+              <option value="SHA256">SHA-256</option>
+              <option value="SHA512">SHA-512</option>
+              <option value="SHA224">SHA-224</option>
+              <option value="SHA384">SHA-384</option>
+              <option value="SHA3">SHA-3</option>
+            </select>
+          </div>
+
+          <!-- Định dạng -->
+          <div class="flex items-center gap-1.5 text-sm">
+            <span class="text-xs text-slate-500 font-semibold">Định dạng</span>
+            <select id="formatSelect" class="rounded-xl border border-neutral p-2 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/60 bg-white font-semibold text-ink">
+              <option value="Hex">Hex</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Các nút thao tác phía trên -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="generateHash()" class="min-h-9 rounded-xl bg-primary px-4 font-bold text-xs hover:bg-primary-hover shadow-xs">
+            Phát ra
+          </button>
+          <button type="button" onclick="copyResult()" class="min-h-9 rounded-xl border border-neutral px-4 font-semibold text-xs hover:border-primary bg-white">
+            Sao chép
+          </button>
+          <button type="button" onclick="clearAll()" class="min-h-9 rounded-xl border border-neutral px-4 font-semibold text-xs hover:border-primary bg-white">
+            Thông thoáng
+          </button>
+          <span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl ml-2">
+            Được tạo ra
+          </span>
+        </div>
+      </div>
+
+      <!-- Khối thông tin thống kê 4 cột (Nguồn, Byte, Thuật toán, So sánh) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 border-b border-neutral divide-x divide-y md:divide-y-0 divide-neutral text-xs bg-slate-50/50">
+        <div class="p-4">
+          <div class="font-bold text-slate-400 uppercase tracking-wider mb-1">NGUỒN</div>
+          <div id="metaSource" class="font-semibold text-ink truncate">Text trực tiếp</div>
+        </div>
+        <div class="p-4">
+          <div class="font-bold text-slate-400 uppercase tracking-wider mb-1">BYTE</div>
+          <div id="metaByte" class="font-bold text-ink">0</div>
+        </div>
+        <div class="p-4">
+          <div class="font-bold text-slate-400 uppercase tracking-wider mb-1">THUẬT TOÁN</div>
+          <div id="metaAlg" class="font-bold text-ink">MD5</div>
+        </div>
+        <div class="p-4">
+          <div class="font-bold text-slate-400 uppercase tracking-wider mb-1">SO SÁNH</div>
+          <div id="metaCompare" class="font-bold text-slate-500">Not set</div>
+        </div>
+      </div>
+
+      <!-- Khu vực 2 cột: Nhập văn bản và Mã băm kết quả -->
+      <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-neutral">
+        
+        <!-- Cột trái: Nhập văn bản -->
+        <div class="p-5 flex flex-col justify-between min-h-[280px]">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-sm text-ink">Nhập văn bản</span>
+              <span id="charByteCount" class="text-xs text-slate-400 font-mono">0 ký tự</span>
+            </div>
+            <textarea id="inputText" rows="7" oninput="generateHash()" placeholder="Nhập văn bản để băm..." class="w-full rounded-xl border border-neutral p-3 outline-none focus:border-primary focus:ring-2 focus:ring-primary/60 text-sm font-mono resize-y bg-white"></textarea>
+          </div>
+          <div class="mt-3">
+            <input type="text" id="expectedHash" oninput="generateHash()" placeholder="Nhập mã hash để so sánh (tùy chọn)..." class="w-full rounded-xl border border-neutral p-2.5 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/60 font-mono bg-white">
+          </div>
+        </div>
+
+        <!-- Cột phải: Mã băm kết quả -->
+        <div id="outputCard" class="p-5 flex flex-col justify-between min-h-[280px] bg-slate-50/30 transition-colors">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-sm text-ink">Mã băm</span>
+              <span id="outputBadge" class="text-xs font-bold text-emerald-600">Mã băm MD5 được tạo</span>
+            </div>
+            <div id="resultHash" class="font-mono text-sm text-ink break-all bg-white p-4 rounded-xl border border-neutral/60 min-h-[120px] flex items-center">
+              <span class="text-slate-400">Kết quả mã hóa sẽ hiển thị tại đây...</span>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-neutral/60 flex items-center justify-between text-xs text-slate-500">
+            <span>Xử lý client-side bảo mật</span>
+            <button type="button" onclick="copyResult()" class="font-bold text-primary-ink hover:underline">Sao chép nhanh</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script>
+  async function gbCopy(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+    const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok;
+  }
+  function gbDownload(data, filename, type = 'application/octet-stream') {
+    const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  const gbStore = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+  function generateHash() {
+    const text = document.getElementById('inputText').value;
+    const alg = document.getElementById('algSelect').value;
+    const expected = document.getElementById('expectedHash').value.trim().toLowerCase();
+
+    // Cập nhật thống kê byte & ký tự (sử dụng TextEncoder để tính đúng số byte UTF-8)
+    const encoder = new TextEncoder();
+    const byteLength = encoder.encode(text).length;
+
+    document.getElementById('metaByte').textContent = byteLength.toLocaleString('vi-VN');
+    document.getElementById('metaAlg').textContent = alg;
+    document.getElementById('charByteCount').textContent = `${text.length} ký tự (${byteLength} bytes)`;
+
+    // Cập nhật phần So sánh
+    const metaCompare = document.getElementById('metaCompare');
+    if (expected) {
+      metaCompare.textContent = 'Đang đối chiếu';
+      metaCompare.className = 'font-bold text-amber-600';
+    } else {
+      metaCompare.textContent = 'Not set';
+      metaCompare.className = 'font-bold text-slate-500';
+    }
+
+    document.getElementById('outputBadge').textContent = `Mã băm ${alg} được tạo`;
+
+    if (!text) {
+      document.getElementById('resultHash').innerHTML = '<span class="text-slate-400">Kết quả mã hóa sẽ hiển thị tại đây...</span>';
+      document.getElementById('outputCard').className = 'p-5 flex flex-col justify-between min-h-[280px] bg-slate-50/30 transition-colors border-neutral/60';
+      return;
+    }
+
+    let hashResult = '';
+    try {
+      switch (alg) {
+        case 'MD5':
+          hashResult = CryptoJS.MD5(text).toString();
+          break;
+        case 'SHA1':
+          hashResult = CryptoJS.SHA1(text).toString();
+          break;
+        case 'SHA256':
+          hashResult = CryptoJS.SHA256(text).toString();
+          break;
+        case 'SHA512':
+          hashResult = CryptoJS.SHA512(text).toString();
+          break;
+        case 'SHA224':
+          hashResult = CryptoJS.SHA224(text).toString();
+          break;
+        case 'SHA384':
+          hashResult = CryptoJS.SHA384(text).toString();
+          break;
+        case 'SHA3':
+          hashResult = CryptoJS.SHA3(text).toString();
+          break;
+      }
+    } catch (e) {
+      hashResult = 'Lỗi tạo mã băm';
+    }
+
+    document.getElementById('resultHash').textContent = hashResult;
+
+    // Kiểm tra khớp so sánh
+    const outputCard = document.getElementById('outputCard');
+    if (expected && hashResult.toLowerCase() === expected) {
+      outputCard.className = 'p-5 flex flex-col justify-between min-h-[280px] bg-emerald-50/70 transition-colors border-emerald-500';
+      metaCompare.textContent = 'Khớp (Match)';
+      metaCompare.className = 'font-bold text-emerald-600';
+    } else if (expected) {
+      outputCard.className = 'p-5 flex flex-col justify-between min-h-[280px] bg-red-50/50 transition-colors border-red-300';
+      metaCompare.textContent = 'Không khớp';
+      metaCompare.className = 'font-bold text-red-600';
+    } else {
+      outputCard.className = 'p-5 flex flex-col justify-between min-h-[280px] bg-slate-50/30 transition-colors';
+    }
+  }
+
+  async function copyResult() {
+    const resText = document.getElementById('resultHash').textContent;
+    if (!resText || resText.includes('Kết quả')) return;
+    const ok = await gbCopy(resText);
+    if (ok) {
+      alert('Đã sao chép mã băm vào bộ nhớ tạm!');
+    }
+  }
+
+  function clearAll() {
+    document.getElementById('inputText').value = '';
+    document.getElementById('expectedHash').value = '';
+    generateHash();
+  }
+
+  // Khởi tạo lần đầu
+  generateHash();
+</script>
+</body>
+</html>
